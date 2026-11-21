@@ -1,0 +1,64 @@
+{
+  "name": "bangla-voice-typing",
+  "productName": "Bangla Voice Typing",
+  "version": "2.2.0",
+  "description": "Speak Bangla, get clean punctuated Bangla text typed into any Windows app. By Graphicarray.",
+  "author": "Graphicarray",
+  "main": "src/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64",
+    "dist:zip": "electron-builder --win zip --x64"
+  },
+  "dependencies": {
+    "koffi": "^2.16.4",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.graphicarray.banglavoicetyping",
+    "productName": "Bangla Voice Typing",
+    "copyright": "Graphicarray",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "package.json",
+      "src/**/*",
+      "renderer/**/*",
+      "assets/**/*",
+      "!node_modules/koffi/build/koffi/{darwin_*,linux*,freebsd*,openbsd*,musl*,win32_ia32,win32_arm64}",
+      "!node_modules/koffi/{doc,src,vendor}",
+      "!node_modules/uiohook-napi/prebuilds/{darwin*,linux*,win32-arm64}",
+      "!node_modules/uiohook-napi/{src,libuiohook}"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Bangla Voice Typing",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "artifactName": "Bangla-Voice-Typing-Setup-${version}.${ext}"
+    },
+    "artifactName": "Bangla-Voice-Typing-${version}-win-x64.${ext}",
+    "npmRebuild": false
+  }
+}

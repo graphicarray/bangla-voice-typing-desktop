@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' file: data:; style-src 'self'; script-src 'self'">
+<title>Bangla Voice Typing</title>
+<link rel="stylesheet" href="settings.css">
+</head>
+<body>
+<header class="ga-header">
+  <a class="ga-logo ga-link" href="https://www.linkedin.com/in/graphicarray" aria-label="Graphicarray on LinkedIn">
+    <img src="../assets/logo.svg" width="44" height="44" alt="">
+  </a>
+  <div>
+    <div class="ga-title">Bangla Voice Typing</div>
+    <a class="ga-by ga-link" href="https://www.linkedin.com/in/graphicarray">by Graphicarray</a>
+  </div>
+</header>
+
+<main>
+  <section class="ga-card">
+    <div class="ga-label">Hold to talk</div>
+    <div class="ga-row">
+      <div id="hotkey" class="ga-kbd">…</div>
+      <button id="changeKey" class="ga-btn4">Change</button>
+    </div>
+    <p id="hotkeyMsg" class="ga-help" data-base="ga-help">Works in any app. Click a text box, hold the keys, speak, then release to type.</p>
+  </section>
+
+  <section class="ga-card">
+    <div class="ga-label">Gemini connection</div>
+    <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Google AI Studio API key">
+    <p class="ga-help"><a href="https://aistudio.google.com/apikey">Get a free key</a>. It is stored encrypted on this PC only.</p>
+    <div class="ga-label">Model</div>
+    <select id="model"><option value="">Add API key first</option></select>
+    <button id="saveKey" class="ga-btn">Save &amp; load models</button>
+    <div id="modelStatus" data-base="ga-status"></div>
+  </section>
+
+  <section class="ga-card">
+    <div class="ga-label">Options</div>
+    <label class="ga-check"><input id="bnDigits" type="checkbox"> Bangla digits (১২৩)</label>
+    <label class="ga-check"><input id="keepEn" type="checkbox"> Keep English words in English</label>
+    <label class="ga-check"><input id="clickBtn" type="checkbox"> Always show floating mic button (off = only while recording)</label>
+    <label class="ga-check"><input id="autoStart" type="checkbox"> Start with Windows (runs in the system tray)</label>
+    <div class="ga-label">How text is entered</div>
+    <select id="insertMode">
+      <option value="paste">Paste (fast, works almost everywhere)</option>
+      <option value="type">Type keystrokes (leaves your clipboard alone)</option>
+    </select>
+  </section>
+
+  <section class="ga-card">
+    <div class="ga-label">Microphone</div>
+    <button id="grant" class="ga-btn2">Test microphone access</button>
+    <div id="status"></div>
+  </section>
+
+  <section class="ga-card">
+    <div class="ga-label">Last transcript</div>
+    <textarea id="last" rows="3" readonly placeholder="Your last dictation shows here."></textarea>
+    <button id="copy" class="ga-btn3">Copy</button>
+  </section>
+</main>
+
+<footer class="ga-footer">
+  <a class="ga-link" href="https://www.linkedin.com/in/graphicarray">Graphicarray · Numan Ahmed</a>
+  <span id="ver" class="ga-chip">v2.2</span>
+</footer>
+
+<script src="settings.js"></script>
+</body>
+</html>
