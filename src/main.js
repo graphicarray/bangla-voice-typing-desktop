@@ -220,7 +220,9 @@ app.whenReady().then(async () => {
 
   if (alwaysShown()) ui('idle');
   const cfg = config.get();
-  if (!process.argv.includes('--hidden') || !cfg.apiKey) showSettings();
+  // Always start in the background (tray) once set up. Only show settings on first run (no API key).
+  if (!cfg.apiKey) showSettings();
+  else ui('idle', `Running in background. Hold ${hotkey.label(cfg.hotkey)} to dictate`);
 });
 
 app.on('window-all-closed', () => { /* stay alive in the tray */ });
