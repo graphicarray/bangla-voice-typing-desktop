@@ -11,7 +11,10 @@ const DEFAULTS = {
   clickBtn: false,
   last: '',
   insertMode: 'paste', // 'paste' (clipboard + Ctrl+V) or 'type' (simulated keystrokes)
-  autoStart: false,
+  autoStart: true,     // start with Windows (default on)
+  autoStartInit: false, // one-time migration flag for older installs
+  lang: 'bn',          // output language: 'bn' | 'en' | 'auto'
+  livePreview: true,   // show live text in the overlay while speaking
   hotkey: { key: 'B', ctrl: true, alt: true, shift: false, meta: false },
 };
 

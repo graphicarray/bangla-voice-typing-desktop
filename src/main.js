@@ -41,7 +41,7 @@ function showSettings() {
 
 function createOverlay() {
   overlayWin = new BrowserWindow({
-    width: 340, height: 72, show: false, frame: false, transparent: true, resizable: false, hasShadow: false,
+    width: 440, height: 150, show: false, frame: false, transparent: true, resizable: false, hasShadow: false,
     focusable: false, skipTaskbar: true, alwaysOnTop: true, fullscreenable: false,
     webPreferences: { preload: path.join(__dirname, 'preload-overlay.js'), contextIsolation: true, sandbox: true },
   });
@@ -53,7 +53,7 @@ function createOverlay() {
 function createRecorder() {
   recorderWin = new BrowserWindow({
     show: false, width: 200, height: 200,
-    webPreferences: { backgroundThrottling: false, contextIsolation: true, sandbox: true },
+    webPreferences: { backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', contextIsolation: true, sandbox: true },
   });
   recorderWin.loadFile(path.join(RENDERER, 'recorder.html'));
 }
@@ -84,6 +84,38 @@ function ui(st, msg = '') {
   }
 }
 
+/* --------------------------- live preview --------------------------- */
+// While you speak, the last few seconds of audio are transcribed every couple of
+// seconds and shown in the floating overlay. The final, clean text is still typed
+// into your app when you release the key.
+
+const PREVIEW_DELAY = 1800, PREVIEW_GAP = 1200, PREVIEW_WINDOW_SEC = 14;
+let previewTimer, previewSeq = 0;
+
+function stopPreview() {
+  previewSeq++;
+  clearTimeout(previewTimer);
+}
+
+function startPreview() {
+  stopPreview();
+  if (config.get().livePreview === false) return;
+  const my = previewSeq;
+  const live = () => my === previewSeq && state === 'rec';
+  const tick = async () => {
+    if (!live()) return;
+    try {
+      const s = await recorder('snapshot', PREVIEW_WINDOW_SEC);
+      if (live() && s && s.wav) {
+        const text = await gemini.transcribe(s.wav, config.get());
+        if (live() && text && overlayWin && !overlayWin.isDestroyed()) overlayWin.webContents.send('live', text);
+      }
+    } catch { /* preview is best-effort; ignore errors */ }
+    if (live()) previewTimer = setTimeout(tick, PREVIEW_GAP);
+  };
+  previewTimer = setTimeout(tick, PREVIEW_DELAY);
+}
+
 /* --------------------------- record + insert --------------------------- */
 
 // Actions run one at a time, so a quick press-and-release can't race.
@@ -110,11 +142,13 @@ async function begin() {
     return;
   }
   ui('rec');
+  startPreview();
   autoStopTimer = setTimeout(() => queue('stop'), MAX_SEC * 1000);
 }
 
 async function finish() {
   clearTimeout(autoStopTimer);
+  stopPreview();
   ui('busy');
   const cfg = config.get();
   const r = await recorder('stop');
@@ -163,9 +197,10 @@ function buildTray() {
 function registerIpc() {
   ipcMain.handle('cfg:get', () => ({ ...config.get(), hotkeyLabel: hotkey.label(config.get().hotkey), version: app.getVersion() }));
   ipcMain.handle('cfg:set', (_e, patch) => {
-    const allowed = ['apiKey', 'model', 'keepEn', 'bnDigits', 'clickBtn', 'insertMode', 'autoStart'];
+    const allowed = ['apiKey', 'model', 'keepEn', 'bnDigits', 'clickBtn', 'insertMode', 'autoStart', 'lang', 'livePreview'];
     const clean = {};
     for (const k of allowed) if (k in patch) clean[k] = patch[k];
+    if ('lang' in clean && !['bn', 'en', 'auto'].includes(clean.lang)) delete clean.lang;
     config.set(clean);
     if ('autoStart' in clean) applyAutoStart();
     if ('clickBtn' in clean && state === 'idle') ui('idle');
@@ -213,6 +248,8 @@ app.whenReady().then(async () => {
   createRecorder();
   createOverlay();
   buildTray();
+  // Older installs had auto-start off: switch it on once. The checkbox in settings can still turn it off.
+  if (!config.get().autoStartInit) config.set({ autoStart: true, autoStartInit: true });
   applyAutoStart();
 
   hotkey.setHotkey(config.get().hotkey);

@@ -29,7 +29,16 @@ $('saveKey').addEventListener('click', async () => {
 });
 $('model').addEventListener('change', (e) => save({ model: e.target.value }));
 $('insertMode').addEventListener('change', (e) => save({ insertMode: e.target.value }));
-for (const k of ['keepEn', 'bnDigits', 'clickBtn', 'autoStart']) {
+
+const LANG_HELP = {
+  bn: 'Output is always Bangla. English or other speech is translated into Bangla.',
+  en: 'Output is always English. Bangla or other speech is translated into English.',
+  auto: 'Each part is written in the language you spoke (Bangla or English). No translation.',
+};
+const showLangHelp = () => { $('langHelp').textContent = LANG_HELP[$('lang').value] || ''; };
+$('lang').addEventListener('change', (e) => { save({ lang: e.target.value }); showLangHelp(); });
+
+for (const k of ['keepEn', 'bnDigits', 'clickBtn', 'autoStart', 'livePreview']) {
   $(k).addEventListener('change', (e) => save({ [k]: e.target.checked }));
 }
 
@@ -72,6 +81,9 @@ window.api.onLast((t) => { $('last').value = t; });
   $('bnDigits').checked = cfg.bnDigits;
   $('clickBtn').checked = cfg.clickBtn;
   $('autoStart').checked = cfg.autoStart;
+  $('livePreview').checked = cfg.livePreview !== false;
+  $('lang').value = cfg.lang || 'bn';
+  showLangHelp();
   $('insertMode').value = cfg.insertMode;
   $('last').value = cfg.last;
   $('hotkey').textContent = cfg.hotkeyLabel;

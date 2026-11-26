@@ -5,8 +5,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
 <style>
   html,body{margin:0;height:100%;background:transparent;overflow:hidden;user-select:none}
-  body{display:flex;flex-direction:row-reverse;align-items:center;justify-content:flex-start;gap:10px;padding:0 4px;
-    font-family:Inter,"Segoe UI",system-ui,Verdana,sans-serif}
+  body{display:flex;flex-direction:row-reverse;align-items:flex-end;justify-content:flex-start;gap:10px;padding:0 4px 8px;
+    font-family:Inter,"Segoe UI","Nirmala UI",system-ui,Verdana,sans-serif}
   button{all:initial;box-sizing:border-box;flex:none;width:48px;height:48px;border-radius:999px;cursor:pointer;
     display:grid;place-items:center;background:#062847;border:1px solid #0F4A7A;color:#00CDFF;
     transition:box-shadow .15s,background .15s}
@@ -18,8 +18,11 @@
   button.busy{border-color:#00CDFF;color:#8FA7BF;cursor:wait;animation:fade 1s infinite}
   @keyframes halo{0%{box-shadow:0 0 0 0 #00A9FF55,0 0 18px #00CDFFAA}100%{box-shadow:0 0 0 14px #00A9FF00,0 0 18px #00CDFFAA}}
   @keyframes fade{50%{opacity:.5}}
-  #tip{display:none;max-width:250px;font:600 13px/1.4 Inter,"Segoe UI",system-ui,Verdana,sans-serif;color:#00CDFF;
-    background:#062847;border:1px solid #00CDFF;border-radius:18px;padding:6px 14px}
+  #tip{display:none;max-width:340px;max-height:112px;overflow:hidden;align-self:flex-end;margin-bottom:4px;word-break:break-word;
+    font:600 13px/1.45 Inter,"Segoe UI","Nirmala UI",system-ui,Verdana,sans-serif;color:#00CDFF;
+    background:#062847;border:1px solid #00CDFF;border-radius:18px;padding:8px 14px}
+  #tip.live{font-size:14px;font-weight:500;color:#E6F6FF}
+  #tip.live::after{content:" \258C";color:#00CDFF;animation:fade 1s infinite}
 </style>
 </head>
 <body>

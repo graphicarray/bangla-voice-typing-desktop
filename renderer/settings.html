@@ -38,9 +38,20 @@
   </section>
 
   <section class="ga-card">
+    <div class="ga-label">Output language</div>
+    <select id="lang">
+      <option value="bn">বাংলা (Bangla)</option>
+      <option value="en">English</option>
+      <option value="auto">Auto (same language you speak)</option>
+    </select>
+    <p id="langHelp" class="ga-help"></p>
+  </section>
+
+  <section class="ga-card">
     <div class="ga-label">Options</div>
+    <label class="ga-check"><input id="livePreview" type="checkbox"> Show live text while speaking</label>
     <label class="ga-check"><input id="bnDigits" type="checkbox"> Bangla digits (১২৩)</label>
-    <label class="ga-check"><input id="keepEn" type="checkbox"> Keep English words in English</label>
+    <label class="ga-check"><input id="keepEn" type="checkbox"> Keep English words in English (Bangla / Auto)</label>
     <label class="ga-check"><input id="clickBtn" type="checkbox"> Always show floating mic button (off = only while recording)</label>
     <label class="ga-check"><input id="autoStart" type="checkbox"> Start with Windows (runs in the system tray)</label>
     <div class="ga-label">How text is entered</div>

@@ -1,11 +1,13 @@
 'use strict';
-// Hidden window: records the mic and returns a 16 kHz mono WAV (base64).
-// Audio handling is carried over unchanged from the extension's offscreen.js.
+// Hidden window: records the mic as raw PCM and returns a 16 kHz mono WAV (base64).
+// stop() returns the whole recording; snapshot() returns the most recent seconds
+// while recording continues (used for the live preview).
 
-let rec = null, stream = null, chunks = [], t0 = 0;
+let stream = null, ctx = null, node = null, mute = null, srcNode = null;
+let blocks = [], total = 0, rate = 48000, t0 = 0, active = false;
 
 async function start() {
-  if (rec && rec.state === 'recording') return { ok: true };
+  if (active) return { ok: true };
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -13,45 +15,95 @@ async function start() {
   } catch {
     return { error: 'mic' };
   }
-  chunks = [];
-  rec = new MediaRecorder(stream, MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? { mimeType: 'audio/webm;codecs=opus' } : {});
-  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-  rec.start(250);
+  ctx = new AudioContext();
+  if (ctx.state !== 'running') await ctx.resume().catch(() => {});
+  rate = ctx.sampleRate;
+  blocks = [];
+  total = 0;
+  srcNode = ctx.createMediaStreamSource(stream);
+  node = ctx.createScriptProcessor(4096, 1, 1);
+  node.onaudioprocess = (e) => {
+    if (!active) return;
+    const d = new Float32Array(e.inputBuffer.getChannelData(0)); // copy: the buffer is reused
+    blocks.push(d);
+    total += d.length;
+  };
+  mute = ctx.createGain();
+  mute.gain.value = 0; // the processor only runs when connected to the output
+  srcNode.connect(node);
+  node.connect(mute);
+  mute.connect(ctx.destination);
+  active = true;
   t0 = Date.now();
   return { ok: true };
 }
 
-async function halt() {
-  if (rec && rec.state !== 'inactive') await new Promise((done) => { rec.onstop = done; rec.stop(); });
+function teardown() {
+  active = false;
+  try { node && (node.onaudioprocess = null); } catch {}
+  try { srcNode && srcNode.disconnect(); } catch {}
+  try { node && node.disconnect(); } catch {}
+  try { mute && mute.disconnect(); } catch {}
   if (stream) stream.getTracks().forEach((t) => t.stop());
+  if (ctx) ctx.close().catch(() => {});
+  stream = ctx = node = mute = srcNode = null;
 }
 
 async function cancel() {
-  await halt();
-  chunks = [];
+  teardown();
+  blocks = [];
+  total = 0;
   return { ok: true };
 }
 
+// Join the last `maxSec` seconds (or everything when maxSec is falsy) into one Float32Array.
+function join(maxSec) {
+  let want = total;
+  if (maxSec) want = Math.min(total, Math.round(maxSec * rate));
+  const out = new Float32Array(want);
+  let pos = want;
+  for (let i = blocks.length - 1; i >= 0 && pos > 0; i--) {
+    const b = blocks[i];
+    const n = Math.min(b.length, pos);
+    out.set(b.subarray(b.length - n), pos - n);
+    pos -= n;
+  }
+  return out;
+}
+
 async function stop() {
-  if (!rec) return { error: 'Not recording' };
-  await halt();
-  if (Date.now() - t0 < 700) return { error: 'Too short, try again' };
+  if (!active) return { error: 'Not recording' };
+  const dur = Date.now() - t0;
+  const r = rate;
+  const pcm = join(0);
+  teardown();
+  blocks = [];
+  total = 0;
+  if (dur < 700) return { error: 'Too short, try again' };
   try {
-    const wav = await toWav(new Blob(chunks, { type: rec.mimeType }));
-    return { wav: await toBase64(wav) };
+    return { wav: await toBase64(await toWav(pcm, r)) };
   } catch (e) {
     return { error: 'Could not process audio: ' + e.message };
   }
 }
 
-// Decode → 16 kHz mono WAV, with a gain lift for quiet voices (max x8).
-async function toWav(blob) {
-  const ac = new AudioContext();
-  const audio = await ac.decodeAudioData(await blob.arrayBuffer());
-  ac.close();
-  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(audio.duration * 16000)), 16000);
+// Live preview: last few seconds of audio, recording keeps going.
+async function snapshot(maxSec) {
+  if (!active || total < rate * 1.2) return { wav: '' };
+  try {
+    return { wav: await toBase64(await toWav(join(maxSec), rate)) };
+  } catch {
+    return { wav: '' };
+  }
+}
+
+// Resample to 16 kHz mono WAV, with a gain lift for quiet voices (max x8).
+async function toWav(input, inRate) {
+  const buf = new AudioBuffer({ length: input.length, numberOfChannels: 1, sampleRate: inRate });
+  buf.copyToChannel(input, 0);
+  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000);
   const src = off.createBufferSource();
-  src.buffer = audio;
+  src.buffer = buf;
   src.connect(off.destination);
   src.start();
   const pcm = (await off.startRendering()).getChannelData(0);
@@ -81,4 +133,4 @@ const toBase64 = (blob) =>
     f.readAsDataURL(blob);
   });
 
-window.rec = { start, stop, cancel };
+window.rec = { start, stop, cancel, snapshot };
